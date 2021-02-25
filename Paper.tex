@@ -1,0 +1,251 @@
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.20 of 2017/10/04
+%
+\documentclass[runningheads]{llncs}
+%
+\usepackage{graphicx}
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following line
+% to display URLs in blue roman font according to Springer's eBook style:
+% \renewcommand\UrlFont{\color{blue}\rmfamily}
+
+\begin{document}
+%
+\title{A Survey on Deep Learning Based Techniques for Text-To-Speech
+Models}
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Atharva Joshi\inst{1} \and
+Gaurav Boralkar\inst{1} \and
+Rutuja Devarkar\inst{1} \and
+Khushi Gulati\inst{1}}
+%
+\authorrunning{Atharva Joshi et al.}
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{Pune Institute of Computer Technology, Pune 411006, India}
+%
+\maketitle              % typeset the header of the contribution
+%
+\begin{abstract}
+The improvement of computational power has
+brought about the resurgence of deep neural network which has
+in turn drastically improved the quality of text-to-speech models.
+Models are trained over hours of raw audio to perform this task
+and changing the speakers voice requires similar amount in time.
+Newer architectures with 3 stage pipelines have shown effective
+results where model is trained on few seconds of reference speech.
+Along with faster train times it results in higher Mean Opinion
+Score(MOS) of 4.53 which is an average of a subjective metric.
+
+
+\keywords{Text-to-Speech \and Deep Learning.}
+\end{abstract}
+%
+%
+%
+\section{Introduction}
+Deep learning models have become widely used in several
+fields of applied machine learning. Text-to-speech (TTS) is
+the process of synthesizing artificial speech from raw text which too
+is impacted by deep learning. The naturalness of speech is
+generally rated on a subjective metric in which artificially generated speech in compared to its real world counterpart. This
+score generated forms the basis of Mean opinion score(MOS).
+Professionally recorded speech datasets are very sparse hence
+impeding the act of training such models. This paper first goes over the Generalized end to end loss function which makes faster training possible followed by the speech synthesis model called Wavenet
+which is an essential component of text-to-speech models followed
+by Tacotron 1 and its iteration Tacotron 2 which are complete
+end-to-end text-to-speech synthesis models.
+
+\section{Generalized End-to-End loss Function}
+Derived from Tuple End-to-End loss \cite{ref_paper1}, Generalized End-to-End Loss function (GEEL) is multi-speaker in nature it deals with batch training of $M$ speakers and $N$ utterances per speaker. This batch goes through a Long Short term Memory Cell(LSTM) and embedding layer and then is converted into a co-similarity matrix. The co-similarity matrix contains the probability of whether a given utterance belongs to a given speaker. The working can be seen as follows.
+\newpage
+\begin{figure}
+\centering
+\includegraphics[scale= 0.7]{gell.png}
+\caption{Working implementation of Generalized End-to-End Loss. From feature extractions to LSTMs to similarity calculation using cosine similarity function is how the end to end loss is calculated \cite{ref_paper1}}
+\end{figure}
+
+The GEEL loss function is basically the sum of all losses over the co-similarity matrix. In theory, it attempts to push the embedding of the utterance towards the centroid of the original speaker which signifies that it belongs to that speaker.
+
+\begin{figure}
+\centering
+\includegraphics[scale= 0.7]{gellworking.png}
+\caption{ Working of Generalized End-to-End loss. The loss function tries to push the centroid of the instance $e_{ji}$ towards the actual speaker $e_j$ (blue) and away from the other speakers(red and purple) \cite{ref_paper1}}
+\end{figure}
+
+Here $e_{ji}$ is the utterance $n$ and the $c_k$ represents the set of actual speakers. Generalized End-to-End Loss tries to push the centroid of $e_{ji}$ towards the actual speaker whilst maintaining the largest distance from its closest wrong speaker $c_k$. This way it improves its accuracy.
+
+%---------------------------------------------------------
+%---------------------------------------------------------
+
+\section{Wavenet}
+\subsection{Introduction}
+Wavenet\cite{ref_paper2} is a type of feed-forward convolutional neural network used for generating audio. Wavenet is able to generate near-accurately realistic sounding human-like voices by directly modeling waveforms using neural network models trained with recording of actual speech. Tests with US English and Mandarin proved that the system outperforms Google’s best text to speech systems. Wavenet’s ability to generate raw waveforms means that it can model any kind of audio. 
+
+\subsection{Architecture}
+Wavenet converts predicted  mel-spectrogram frames sent by the tacotron unit  into sound units. A modified version of Wavenet can be used where Time domain waveform samples are conditioned on the predicted mel-spectrograms.  Wavenet models one sample of the waveform at one time. The second input sequence provided, first being the mel-spectrograms, is the real subject voice. It generates audio data by passing output via signal processing algorithms also known as vocoders.
+
+
+In this system shown in Fig. 1, the convolutional neural network considers a raw signal as an input, synthesizing an output one sample at a time which is performed by sampling categorical distribution of single value, encoded and transformed and quantized to 256 possible values. 
+
+
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.5]{Wavenet.png}}
+\caption{Wavenet Architecture \cite{ref_paper2}}
+\end{figure}
+
+The overview of the architecture is as follows.
+
+\subsubsection{Casual Convolutional layer}
+The flow in the architecture begins with the casual convolutional layer. It is the quintessential part of Wavenet structure and it signifies the auto-regressive property of Wavenet, maintaining the order of samples.  Multiple input samples are used for training of output samples. A modified version of diluted convolution is equivalent to a convolution with larger filter, where the original convolution is filled with zeroes to increase the receptive field of the networks. Stacked dilated convolutions enable networks to have very large receptive fields,  with just a few layers, while preserving the input resolution throughout the network as well as computational efficacy.
+
+\subsubsection{Skip connections and Softmax Layer} 
+Skip connections allow complete bypass of convolution layers and give raw data the ability to influence the formation of prediction to an arbitrary number of periods into the future. These essentially are hyper-parameters and can be optimized depending on structure and complexity of sequence learnt. For each block in the stack, output from the gated activations joins the set of skip connections. After passing the data from ReLU activations and a softmax layer, an output is produced, which is nothing but a unit of sound. The reason for using softmax distribution is that the categorical distribution is more flexible and can easily model arbitrary distributions as it makes no assumptions about their shape. The generated samples are later converted into audio using -law expansion transformation, which is the inverse of -law compounding transformation. 
+
+\subsubsection{Gated Activation Units}
+Gated activation units are used to model complex operations. They are represented by the following equation:
+\begin{equation}
+\mathrm{z}=\tanh \left(W_{f, k} * x\right) \cdot \sigma\left(W_{g, k} * x\right)
+\end{equation}
+
+Where $*$ is the convolutional operator, is an element wise multiplication operator of sigmoid function activation function. 
+
+$Tanh$ branch is an activation function of the diluted convolution. The sigmoid branch serves as a binary gate and can cancel everything up to it. It captures important data, going back arbitrary periods. 
+
+\subsubsection{Prediction of Samples}
+The following equation predicts new samples (by predicting the probability of the next samples) given the probability of current and past samples.
+
+\begin{equation}
+\mathrm{p}(\mathrm{x})=\prod_{n=1}^{N} p\left(x_{N} \mid x_{1}, x_{2} \ldots, x_{N-1}\right)
+\end{equation}
+
+\subsubsection{Global and Local Conditioning}
+When Wavenet is conditioned on the auxiliary input features (which can be either linguistic feature or acoustic feature), denoted by $h(features)$, it is represented as $p(x|h)$.
+\begin{equation}
+\mathrm{p}(\mathrm{x})=\prod_{t=1}^{T} p\left(x_{t} \mid x_{1}, x_{2} \ldots, x_{t-1}, h\right)
+\end{equation}
+
+Wavenet produces audio with the required characteristics which is done by conditioning the model on input variables. Wavenet is conditioned based on the nature of input in 2 ways 
+\begin{enumerate}
+\item Global Conditioning
+\item Local Conditioning
+\end{enumerate}
+ Without proper conditioning, the model can produce gibberish results. Global conditioning characterizes the identity of speaker which then influences the output distribution across all the time steps and it is represented by the following equation:
+\begin{equation}
+\mathbf{z}=\tanh \left(W_{f, k} * \mathbf{x}+V_{f, k}^{T} \mathbf{h}\right) \odot \sigma\left(W_{g, k} * \mathbf{x}+V_{g, k}^{T} \mathbf{h}\right)
+\end{equation}
+
+Where $V_{*,k}$ is a learn-able linear projection, and the vector $V_{g, k}^{T} \mathbf{h}$ is broadcast over the time dimension. Local features of speech represent the context of utterances accompanying style of speaking of the speaker. 
+
+
+The need for local conditioning is must as the wavelet also captures local features of the signal. 
+Local conditioning is represented by the following equation:
+\begin{equation}
+\mathbf{z}=\tanh \left(W_{f, k} * \mathbf{x}+V_{f, k} * \mathbf{y}\right) \odot \sigma\left(W_{g, k} * \mathbf{x}+V_{g, k} * \mathbf{y}\right)
+\end{equation}
+Where $V_{f, k} * \mathbf{y}$ is a 1x1 convolution layer.
+
+\subsection{Accuracy and Results}
+Although it is tough  to quantitatively determine  model’s efficiencies, a subjective evaluation is plausible  by listening to the samples they produce\cite{ref_paper2}. Wavenets produce a high Mean Opinion Score, which is a subjective evaluation of resemblance of speech/sound produced artificially. 
+Wavenet RNNs have reported $18.8$ phenome error rate (PER) score when trained on TIMIT dataset \cite{ref_paper2}. 
+
+Further to note,  Wavenet RNN also benefits from transfer learning, that is, raw audio of multiple human voices can help create better prosody and intonations. This drastically increases the accuracy of Wavenet.
+
+However, the Wavenet does not enforce long term consistency which can result in second to second variation and deviation in instrumentation, sound quality and voice reproduced.
+Yet,  Samples have been reported to be robust and aesthetically pleasing, even on unconditioned models.
+
+%------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------------------
+
+\section{Tacotron 1}
+\subsection{Introduction}
+A modern text-to-speech synthesis model comprises stages - test analysis front-end for extracting various semantic features, an aural feature prediction model, a complex vocoder for signal processing and an audio synthesis model. As these modules are trained independently, errors from each module may composite. Extensive domain expertise, tough design and complex design of modern text-to-speech leads to a new building system - an integrated end-to-end text-to-speech system trained on $<text, audio>$ pairs \cite{ref_paper3}. The conditioning of attributes - speaker, language, sentiments occur at the very beginning of the model rather than at any certain module allowing rich conditioning of these attributes
+\\
+Tacotron 1, is an end-to-end text-to-speech(TTS) generative model, that uses characters directly for synthesizes of speech. With random initialization, the model can be trained completely from scratch using given <text, audio> pairs. Tacotron generates speech at the frame level, which makes it faster than sample-level auto-regressive methods.  
+
+\subsection{Architecture}
+Tacotron is a seq2seq model including an encoder, an attention-based decoder, and a post-processing net. The model takes characters as input and produces spectrogram frames, at a high-level, that are converted to waveforms later as shown in Fig. 2.
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.4]{Tacotron1.png}}
+\caption{Tacotron Architecture \cite{ref_paper3}}
+\end{figure}
+
+It comprises of four important modules.
+\subsubsection{Encoder}
+Input to the encoder is a character sequence, to extract robust sequential representations of text, where each character is represented as a one-hot vector and embedded into a continuous vector. A set of non-linear transformations, collectively called a “pre-net”, is applied to each embedding. To maintain convergence and improve generalization, a bottleneck layer with dropout as the pre-net is used. The pre-net outputs are transformed by a CBHG module, into the final encoder representation which is used by the attention module. Compared to a standard multi-layer RNN encoder CBHG-based encoder makes fewer mispronunciations\cite{ref_paper3}. 
+
+\subsubsection{CBHG}
+A CBHG block consists of a bank of 1-D convolutional filters, succeeded by highway networks and a bidirectional gated recurrent unit (GRU). It extracts representations from sequences. Convolution of input sequence $N$ sets of 1-D convolutional filters, where the
+$n^{th}$ set contains $C_n$ filters of width $n = 1, 2, . . . ,N$. To increase local invariances, the convolution outputs are stacked together and further max pooled along time. The processed sequence is further passed to a few fixed-width 1-D convolutions, where using residual connections  outputs are added with the original input sequence. For all convolutional layers, batch normalization is used. To extract high-level features, the convolution outputs are fed into a multi-layer highway network. Finally, to extract sequential features from both forward and backward context, we stack a bidirectional GRU RNN on top \cite{ref_paper3}.
+
+\subsubsection{Decoder}
+A content-based $tanh$ attention decoder is used, where a stateful recurrent layer produces the attention query at each decoder time step. To form the input to the decoder RNNs, the context vector and the attention RNN cell output are concatenated. A stack of GRUs with vertical residual connections is used for the decoder. The residual connections speed up convergence [2]. A different target for seq2seq decoding and waveform synthesis is used due to redundancy. An 80-band mel-scale spectrogram is used as the target. To convert from the seq2seq target to waveform use of a post-processing network is done. A simple fully-connected output layer was used to predict the decoder targets. To substantially increase convergence speed, predicting $r$
+frames at once divides the total number of decoder steps by
+$r$, which reduces model size, training time, and inference time. The input frame is passed to a pre-net similar to the encoder. The dropout in the pre-net is critical for the model to generalize, as techniques such as scheduled sampling are not used and it provides a noise source to resolve the multiple modalities in the output distribution.
+
+\subsubsection{Post-processing Net and Waveform Synthesis}
+To convert the seq2seq target to a target that can be synthesized into waveforms is the task  of the post-processing net. The post-processing net learns to predict spectral magnitude sampled on a linear-frequency scale as the synthesizer Griffin-Lim is used and it can see the full decoded sequence. To correct the prediction error for each individual frame, it has both forward and backward information. The Griffin-Lim algorithm is being used to synthesize waveforms from the predicted spectrogram. Before feeding the predicted magnitudes to Griffin-Lim, raising them by a power of 1.2  reduces artifacts, due to its harmonic enhancement effect \cite{ref_paper3}. Griffin-Lim converges after 50 iterations, which is fast enough. The implementation of Griffin-Lim is done in TensorFlow. Griffin-Lim is selected for its simplicity, yielding strong results, developing a fast and high-quality trainable spectrogram to waveform inverter.   
+
+\subsubsection{Griffin-Lim Algorithm}
+Griffin-Lim Algorithm (GLA) is one of the phase reconstruction methods which depends on short-time Fourier transform (STFT) modules redundancy. It estimates a signal from a modified STFT solving the phase recovery problem - recovering a signal from the amplitude of a valid spectrogram only. It solves the phase recovery problem in terms of FT, of the double projection algorithm - a non-redundant system that considers additional side constraints to obtain a unique solution.\cite{ref_paper4}
+
+\subsection{Results and Accuracy}
+Tacotron 1 achieves a 3.82 MOS score on US English\cite{ref_paper3}, with a clean and straightforward waveform synthesis module. The phase recovery problem can be solved considering it in the form of an optimization problem. FGLA gives a new interpretation of the GLA which speeds up its implementation. FGLA is faster though it seems to converge to better points. In the process, the theoretical guarantee of convergence is not found. Practically, FLGA can replace GLA at a very low cost of implementation and computation.
+
+\section{Tacotron 2}
+\subsection{Introduction}
+Tacotron 2\cite{ref_paper5} is a sequence-to-sequence architecture for producing magnitude spectrograms from a sequence of characters, simplifies the customary speech synthesis pipeline by replacing the generation of those linguistic and acoustic features with a one neural network trained from data alone. Similar to Tacotron 1, Tacotron 2 uses the Griffin-Lim algorithm for phase estimation, followed by an inverse short-time Fourier transform.
+
+\subsection{Architecture}
+In Tacotron 2, Mel spectrograms are computed through Short-Time Fourier Transform. Transformation of STFT magnitude to the Mel scale is done using a Mel filterbank, the output magnitudes of which are clipped to minimum value of 0.01 to limit dynamic range in logarithmic domain, followed by log dynamic range compression.  
+
+An encoder and a decoder with attention are composed in the network. The encoder converts a character sequence into a hidden feature representation which the decoder consumes to predict a spectrogram. Input characters are represented using a learned character embedding, which are passed through a stack of 3 convolutional layers, followed by batch normalization and ReLU activations as shown in Fig. 3. 
+\begin{figure}[htbp]
+\centerline{\includegraphics[scale=0.5]{Tacotron2.png}}
+\caption{Tacotron 2 Architecture \cite{ref_paper5}}
+\end{figure}
+
+An attention network consumes the encoder output and summarizes the complete encoded sequence as a fixed-length context vector for every decoder output step. Location-sensitive attention extends the additive attention mechanism to make use of cumulative attention weights from previous decoder time steps as an added feature. It is used and also it encourages the model to stride forward through the input, mitigating potential failure modes where some subsequences are repeated or ignored by the decoder. Projecting inputs and location features to hidden representations, attention probabilities are calculated.  
+
+The decoder is an autoregressive recurrent neural network which makes use of the encoded input sequence (one frame at a time) to predict the Mel spectrogram. The pre-net, acting as an information bottleneck, is essential for learning attention, hence the prediction from the previous time step is first passed through a small pre-net and then this output and attention context vector are concatenated and passed through a stack of 2 unidirectional LSTM layers. The target spectrogram frame is predicted by the linear transform projection of the concatenated result of the LSTM output and the attention context vector. 
+
+Parallelly, the probability that the output sequence has completed is predicted by passing the scalar, obtained by projecting the concatenated result of decoder LSTM output and the attention context, through a sigmoid activation. This stop token prediction is used during inference to allow the model to dynamically determine when to terminate generation instead of always generating for a fixed duration.  
+
+Finally this predicted Mel Spectrogram is passed through Wavenet for voice reconstruction.
+
+\subsection{Results}
+Trained directly on normalized character sequences and corresponding speech waveforms, our model learns to synthesize natural-sounding speech that's difficult to differentiate from real human speech. Model achieves a mean opinion score (MOS) of 4.53 akin to a MOS of 4.58 for professionally recorded speech.\cite{ref_paper5}
+
+\section{Conclusion}
+Today's state of the art text-to-speech systems are mainly attributed to the implementations of Tacotron and Wavenet. Due to their high mean opinion score they have created high standards for speech generation. We have also seen the implementation of Wavenet which is an integral part of the Tacotron models in producing voice from spectrograms.
+
+\bibliographystyle{splncs04}
+% \bibliography{mybibliography}
+%
+\begin{thebibliography}{8}
+
+\bibitem{ref_paper1}
+Li Wan, Quan Wang, Alan Papir, and Ignacio Lopez Moreno. Generalized end-to-end loss forspeaker verification. InProc. IEEE International Conference on Acoustics, Speech, and SignalProcessing (ICASSP), 2018
+
+\bibitem{ref_paper2}
+Oord, Aaron van den, Sander Dieleman, Heiga Zen, Karen Simonyan, Oriol Vinyals, Alex Graves, Nal Kalchbrenner, Andrew Senior, and Koray Kavukcuoglu. "Wavenet: A generative model for raw audio."  arXiv:1609.03499 (2018)
+
+\bibitem{ref_paper3}
+ NY. Wang, R. Skerry-Ryan, D. Stanton, Y. Wu, R. J. Weiss, N. Jaitly, et al., "Tacotron: Towards end-to-end speech synthesis", Proc. Interspeech, pp. 4006-4010, Aug. 2017.
+\bibitem{ref_paper4}
+ N. Perraudin, P. Balazs, and P. L. Søndergaard, “A fast Griffin–Lim algorithm,”  in IEEE Workshop Appl. Signal Process. Au-dio Acoust. (WASPAA), Oct. 2013, pp. 1–4.
+ 
+\bibitem{ref_paper5}
+Jonathan Shen, Ruoming Pang, Ron J Weiss, Mike Schuster, Navdeep Jaitly, Zongheng Yang, Zhifeng Chen, Yu Zhang, Yuxuan Wang, RJ Skerry-Ryan et al., "Natural tts synthesis by conditioning wavenet on mel spectrogram predictions", 2017.
+\end{thebibliography}
+\end{document}
